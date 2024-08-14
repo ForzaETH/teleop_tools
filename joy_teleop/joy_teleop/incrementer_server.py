@@ -38,16 +38,13 @@
 #   * Bence Magyar
 #   * Sam Pfeiffer
 #   * Jeremie Deray (artivis)
-#   * Borong Yuan
 
 import time
 
 from control_msgs.msg import JointTrajectoryControllerState as JTCS
 import rclpy
 from rclpy.action import ActionServer
-from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.duration import Duration
-from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from teleop_tools_msgs.action import Increment as TTIA
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -55,29 +52,26 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 class IncrementerServer(Node):
 
-    def __init__(self):
-        super().__init__('incrementer_server', namespace='joint_trajectory_controller')
-
-        cb_group = ReentrantCallbackGroup()
+    def __init__(self, controller_ns):
+        super().__init__('incrementer_server')
 
         self._has_new_message = False
 
-        self._as = ActionServer(self, TTIA, 'increment',
-                                self._as_cb, callback_group=cb_group)
+        self._as = ActionServer(self, TTIA, 'increment', self._as_cb)
 
-        self._command_pub = self.create_publisher(
-            JointTrajectory, 'joint_trajectory', 1)
+        self._command_pub = self.create_publisher(JointTrajectory, 'command', 1)
 
-        self._state_sub = self.create_subscription(
-            JTCS, 'controller_state', self._state_cb, 1, callback_group=cb_group)
+        self._state_sub = self.create_subscription(JTCS, 'state', self._state_cb, 1)
 
+        state = self._wait_for_new_message()
+        self._value = state.actual.positions
         self._goal = JointTrajectory()
-        self.get_logger().info('Connected to {}'.format(self.get_namespace()))
+        self._goal.joint_names = state.joint_names
+        self.get_logger().info('Connected to %s', controller_ns)
 
     def _as_cb(self, goal):
-        self.increment_by(goal.request.increment_by)
-        goal.succeed()
-        return TTIA.Result()
+        self.increment_by(goal.increment_by)
+        self._as.set_succeeded([])
 
     def _state_cb(self, state):
         self._state = state
@@ -94,31 +88,28 @@ class IncrementerServer(Node):
 
     def increment_by(self, increment):
         state = self._wait_for_new_message()
-        self._goal.joint_names = state.joint_names
-        self._value = state.feedback.positions
+        self._value = state.actual.positions
         self._value = [x + y for x, y in zip(self._value, increment)]
-        self.get_logger().info('Sent goal of {}'.format(self._value))
+        self.get_logger().info('Sent goal of %s', str(self._value))
         point = JointTrajectoryPoint()
         point.positions = self._value
-        point.time_from_start = Duration(seconds=0.1).to_msg()
+        point.time_from_start = Duration(seconds=0.1)
         self._goal.points = [point]
         self._command_pub.publish(self._goal)
 
 
 def main():
-    rclpy.init()
-
-    node = IncrementerServer()
-    executor = MultiThreadedExecutor()
-    executor.add_node(node)
-
     try:
-        executor.spin()
+        rclpy.init()
+
+        node = IncrementerServer('spine_controller')
+
+        rclpy.spin(node)
+
+        node.destroy_node()
+        rclpy.shutdown()
     except KeyboardInterrupt:
         pass
-
-    node.destroy_node()
-    rclpy.shutdown()
 
 
 if __name__ == '__main__':

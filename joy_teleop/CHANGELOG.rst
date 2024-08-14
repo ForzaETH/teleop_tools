@@ -2,30 +2,6 @@
 Changelog for package joy_teleop
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1.5.0 (2023-11-01)
-------------------
-* Fix deprecated topics on JTC (`#86 <https://github.com/ros-teleop/teleop_tools/issues/86>`_)
-* Fix multi-button commands (`#84 <https://github.com/ros-teleop/teleop_tools/issues/84>`_)
-* replace deprecated dash by underscore (`#85 <https://github.com/ros-teleop/teleop_tools/issues/85>`_)
-* Contributors: Noel Jiménez García
-
-1.4.0 (2023-03-28)
-------------------
-* fix incrementer_server
-* Contributors: Borong Yuan
-
-1.3.0 (2022-11-23)
-------------------
-* launch: fix deprecated attributes
-* Fix some warnings from tests.
-  In here are some flake8 fixes and fixes to the joy_teleop tests
-  now that some of the error messages have changed.
-* Allow a `value` type within an axis mapping. Useful for frame data.
-* Add offsets to example yaml
-* add ci & lint
-* joy_teleop: convert current time to message type for timestamping
-* Contributors: AndyZe, Chris Lalancette, Kazunari Tanaka, Marcel Zeilinger, Russ Webber
-
 1.2.1 (2020-10-29)
 ------------------
 

@@ -101,7 +101,7 @@ class JoyTeleopCommand:
         self.active = False
 
     def update_active_from_buttons_and_axes(self, joy_state: sensor_msgs.msg.Joy) -> None:
-        self.active = True
+        self.active = False
 
         if (self.min_button is not None and len(joy_state.buttons) <= self.min_button) and \
            (self.min_axis is not None and len(joy_state.axes) <= self.min_axis):
@@ -123,7 +123,7 @@ class JoyTeleopCommand:
 
         for axis in self.axes:
             try:
-                self.active &= joy_state.axes[axis] == 1.0
+                self.active |= joy_state.axes[axis] == 1.0
             except IndexError:
                 # An index error can occur if this command is configured for multiple buttons
                 # like (0, 10), but the length of the joystick buttons is only 1.  Ignore these.
